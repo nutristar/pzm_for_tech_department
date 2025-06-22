@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-// const API_GET = 'http://192.168.0.80:5000/recive';
-// const API_DELETE = 'http://192.168.0.80:5000/delete';
-const API_GET =    'http://63.178.37.169:5000/recive';
-const API_DELETE = 'http://63.178.37.169:5000/delete';
+const API_GET = 'http://192.168.0.80:5000/tech_department';
+const API_DELETE = 'http://192.168.0.80:5000/delete';
 
 
-const REFRESH_COOLDOWN = 5000;
+
+const REFRESH_INTERVAL = 10000;
 
 const TranscriptionsList = () => {
   const [transcriptions, setTranscriptions] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
-  const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
@@ -33,26 +31,14 @@ const TranscriptionsList = () => {
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(fetchData, REFRESH_INTERVAL);
+    return () => clearInterval(interval);
   }, []);
-
-  const handleRefresh = () => {
-    const now = Date.now();
-    if (now - lastRefreshTime < REFRESH_COOLDOWN) {
-      alert('Пожалуйста, подождите перед следующим обновлением');
-      return;
-    }
-    setLastRefreshTime(now);
-    fetchData();
-  };
 
   const handleCheckboxChange = (id) => {
     setSelectedIds((prev) => {
       const updated = new Set(prev);
-      if (updated.has(id)) {
-        updated.delete(id);
-      } else {
-        updated.add(id);
-      }
+      updated.has(id) ? updated.delete(id) : updated.add(id);
       return updated;
     });
   };
@@ -78,43 +64,45 @@ const TranscriptionsList = () => {
 
   return (
     <div>
-      <h2>LIST USTEREK</h2>
-      <button onClick={handleRefresh} disabled={loading}>
-        {loading ? 'Обновление...' : 'Refresh/Ponowic'}
+      <h2>USTERKI TECHNICZNE</h2>
+
+      <button onClick={fetchData} disabled={loading}>
+        {loading ? 'Обновление...' : 'REFRESH'}
       </button>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      <div>
-        {transcriptions.map((item, index) => (
-          <div key={item.id} style={{ marginBottom: '20px' }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={selectedIds.has(item.id)}
-                onChange={() => handleCheckboxChange(item.id)}
-              />
-              <span style={{ marginLeft: '10px' }}>
-                {/* <strong>Файл:</strong> {item.file_name}<br /> */}
-                <strong>POKOJ             :</strong> {item.pokoj}<br />
-                <strong>Problema / Usterka:</strong> {item.tresc}<br />
-                {/* <strong>Ezyk :</strong> {item.language}<br /> */}
-                <strong>Dzien Czas:</strong> {new Date(item.timestamp).toLocaleString()}
-              </span>
-            </label>
-            {index < transcriptions.length - 1 && (
-              <hr
-                style={{
-                  border: 'none',
-                  height: '2px',
-                  backgroundColor: 'black',
-                  margin: '20px 0',
-                }}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+      <table style={{ width: '100%', marginTop: '20px', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ backgroundColor: '#eee' }}>
+            <th></th>
+            <th>POKOJ</th>
+            <th>PROBLEM</th>
+            <th>TIME</th>
+          </tr>
+        </thead>
+        <tbody>
+  {[...transcriptions]
+    .sort((a, b) => new Date(a.pokoj) - new Date(b.pokoj)) // сортировка по возрастанию
+    .map((item) => (
+      <tr key={item.id} style={{ borderBottom: '1px solid #ccc' }}>
+        <td>
+          <input
+            type="checkbox"
+            checked={selectedIds.has(item.id)}
+            onChange={() => handleCheckboxChange(item.id)}
+          />
+        </td>
+        <td style={{ textAlign: 'center' }}>{item.pokoj}</td>
+        <td>{item.tech_problem || '-'}</td>
+        <td style={{ textAlign: 'center' }}>
+          {new Date(item.timestamp).toLocaleString()}
+        </td>
+      </tr>
+    ))}
+</tbody>
+
+      </table>
 
       {transcriptions.length > 0 && (
         <button
@@ -122,7 +110,7 @@ const TranscriptionsList = () => {
           disabled={selectedIds.size === 0}
           style={{ marginTop: '20px' }}
         >
-          Zrobilem
+          Fixed / Zrobione
         </button>
       )}
     </div>
@@ -130,3 +118,12 @@ const TranscriptionsList = () => {
 };
 
 export default TranscriptionsList;
+
+
+
+
+
+
+
+// const API_GET =    'http://63.178.37.169:5000/tech_department';
+// const API_DELETE = 'http://63.178.37.169:5000/delete';
